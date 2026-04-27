@@ -1,0 +1,115 @@
+---
+title: "Building Production RAG Pipelines: What Nobody Tells You"
+date: "2024-08-15"
+category: "LLM Engineering"
+excerpt: "After deploying RAG in production for 3 different companies, I've collected the hard lessons that don't make it into tutorials."
+---
+
+# Building Production RAG Pipelines: What Nobody Tells You
+
+After deploying RAG (Retrieval-Augmented Generation) in production for three different companies, I've accumulated a set of hard lessons that tutorials consistently skip. This is the post I wish existed when I started.
+
+## The Chunking Strategy Is Everything
+
+Most tutorials show you `CharacterTextSplitter` with a 1000-token chunk and call it a day. In production, this will silently wreck your retrieval quality.
+
+The real problem: your chunk size needs to match your **query profile**, not an arbitrary default.
+
+```python
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+# ❌ Naïve — same size for everything
+splitter = RecursiveCharacterTextSplitter(chunk_size=1000)
+
+# ✅ Think about what a query looks like
+# If queries are "what is X?", smaller chunks (256-512) surface facts better.
+# If queries are "explain how X works", larger chunks (512-1024) preserve context.
+
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=512,
+    chunk_overlap=64,
+    separators=["\n\n", "\n", ". ", " "],  # Semantic boundaries first
+)
+```
+
+Run offline evals before you commit to a chunk size. Build a test set of 50 question-answer pairs from your corpus and measure top-5 retrieval recall. You'll be surprised how much chunk size matters.
+
+## Your Eval Set Is Lying to You
+
+The most dangerous thing in RAG is a green eval dashboard hiding broken retrieval.
+
+Here's a common pattern: you embed with `text-embedding-ada-002`, your eval set was created by querying the same model, and you're measuring cosine similarity against... the same embeddings. Circular validation.
+
+**What to do instead:**
+1. Create eval queries *before* you choose your embedding model
+2. Have humans verify that retrieved chunks actually contain the answer
+3. Measure **chunk recall** (does the right chunk appear in top-k?), not just end-to-end answer quality
+
+```python
+def evaluate_retrieval(vectorstore, eval_pairs: list[dict]) -> float:
+    """
+    eval_pairs: [{"query": "...", "expected_chunk_id": "..."}]
+    Returns recall@5.
+    """
+    hits = 0
+    for pair in eval_pairs:
+        results = vectorstore.similarity_search(pair["query"], k=5)
+        retrieved_ids = [r.metadata["chunk_id"] for r in results]
+        if pair["expected_chunk_id"] in retrieved_ids:
+            hits += 1
+    return hits / len(eval_pairs)
+```
+
+## Hybrid Search Is Not Optional at Scale
+
+Pure vector search fails on:
+- Proper nouns (model names, product names, person names)
+- Abbreviations ("RAG", "LLM", "API")
+- Exact phrases users expect to find verbatim
+
+The fix: **hybrid retrieval** — combine BM25 (keyword) with dense vector search, then re-rank.
+
+```python
+from langchain.retrievers import EnsembleRetriever
+from langchain_community.retrievers import BM25Retriever
+
+# Dense retriever
+dense = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 10})
+
+# Sparse retriever
+sparse = BM25Retriever.from_documents(docs, k=10)
+
+# Ensemble with 60/40 weighting toward dense
+hybrid = EnsembleRetriever(
+    retrievers=[dense, sparse],
+    weights=[0.6, 0.4]
+)
+```
+
+After retrieving with both methods, pass results to a cross-encoder reranker. The reranker sees the query and each candidate chunk together and scores them — it's expensive but worth it for the final top-k.
+
+## The Prompt Is a First-Class Engineering Artifact
+
+RAG prompts need versioning, testing, and iteration like any other code. Here's a production-ready template:
+
+```python
+SYSTEM_PROMPT = """You are a helpful assistant with access to a specific knowledge base.
+
+RULES:
+1. Answer ONLY based on the provided context below.
+2. If the context doesn't contain the answer, say: "I don't have information about this in my knowledge base."
+3. Never make up facts, URLs, or statistics.
+4. Cite the source section when relevant.
+
+CONTEXT:
+{context}
+"""
+```
+
+The most important rule: **never let the model hallucinate beyond the context**. A confident wrong answer is worse than an honest "I don't know."
+
+## Conclusion
+
+RAG in production is 20% architecture and 80% data discipline. Invest in your chunking strategy, build honest evals, use hybrid retrieval, and treat your prompts like code.
+
+The demos work. Making them work reliably under production load with real user queries — that's the actual job.

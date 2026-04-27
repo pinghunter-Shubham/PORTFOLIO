@@ -1,0 +1,85 @@
+---
+title: "Why I Switched from OpenAI to Claude for My Agent Architecture"
+date: "2024-07-22"
+category: "AI Engineering"
+excerpt: "Six months into building a multi-agent system on GPT-4, I made the switch to Claude. Here's what changed."
+---
+
+# Why I Switched from OpenAI to Claude for My Agent Architecture
+
+Six months into building a production multi-agent system on GPT-4, I made the switch to Claude claude-sonnet-4-20250514. This isn't a hot take — it's a field report from someone who ran both in production at scale.
+
+## The Context: What I Was Building
+
+I was building an agentic data-extraction pipeline. Given a company name, the system would:
+1. Search for recent news and filings
+2. Extract structured data from documents
+3. Cross-reference and validate findings
+4. Produce a structured report
+
+Multiple agents, tool calling, 50+ API calls per pipeline run, running 200+ pipelines/day.
+
+## Why I Switched: The Real Reasons
+
+### 1. Claude Follows Instructions Better on Long Context
+
+GPT-4 is excellent on short contexts. As context grows past 8k tokens, instruction-following degrades noticeably — especially complex, multi-part instructions like "extract X but skip Y, format as Z, and if you find A, do B."
+
+Claude handles 100k+ token contexts with remarkable consistency. In my benchmarks on 20k-token documents, Claude maintained instruction compliance ~15% better than GPT-4-turbo.
+
+### 2. Tool Calling Reliability
+
+Claude's tool-calling implementation is less "chatty." GPT-4 would frequently add prose before and after tool calls, requiring parsing logic to strip it. Claude calls tools cleanly and processes results more reliably in agentic loops.
+
+```python
+# With GPT-4: often got "Let me search for that information..." before the tool call
+# With Claude: clean tool call, no preamble
+
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    max_tokens=4096,
+    tools=tools,
+    messages=conversation_history
+)
+
+# tool_use blocks are clean, no stripping required
+for block in response.content:
+    if block.type == "tool_use":
+        result = execute_tool(block.name, block.input)
+```
+
+### 3. Cost at Scale
+
+At 200+ pipeline runs per day with 50+ API calls each, cost compounds fast. Claude claude-sonnet-4-20250514 is meaningfully cheaper than GPT-4-turbo for equivalent quality on my workload, without the context tradeoffs of GPT-3.5.
+
+## What Got Harder
+
+Honesty requires I name the tradeoffs too.
+
+**Code generation**: GPT-4 still edges ahead for writing and debugging code. For purely coding tasks, I still reach for GPT-4.
+
+**Community and tooling**: LangChain integrations, cookbook examples, and StackOverflow answers default to OpenAI. Expect to adapt examples.
+
+**Refusals**: Claude is more conservative in certain domains. For my use case (financial data extraction), this was never an issue — but in other domains, YMMV.
+
+## The Migration
+
+The actual switch was straightforward with LangChain:
+
+```python
+# Before
+from langchain_openai import ChatOpenAI
+llm = ChatOpenAI(model="gpt-4-turbo", temperature=0)
+
+# After
+from langchain_anthropic import ChatAnthropic
+llm = ChatAnthropic(model="claude-sonnet-4-20250514", temperature=0)
+```
+
+The interface is identical. The prompts needed minor tuning — Claude is less tolerant of vague instructions, which is actually a feature that forces you to write better prompts.
+
+## Conclusion
+
+The right LLM depends on your workload. For long-context agentic tasks with complex instructions, Claude is currently my default. For short-context coding tasks, GPT-4 still wins. Use both.
+
+The most important thing: run your own benchmarks on your own workload. Benchmarks from labs and blogs are a starting point, not a verdict.

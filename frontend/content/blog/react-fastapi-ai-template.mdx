@@ -1,0 +1,169 @@
+---
+title: "React + FastAPI: The Full-Stack AI App Template I Wish Existed"
+date: "2024-06-10"
+category: "Full Stack"
+excerpt: "A production-ready template for AI applications: streaming responses, token counting, rate limiting, auth, and a sane folder structure."
+---
+
+# React + FastAPI: The Full-Stack AI App Template I Wish Existed
+
+Every AI app I've built in the last two years has converged on the same stack: **Next.js on the frontend, FastAPI on the backend**. Here's the architecture I've settled on and why each decision was made.
+
+## Why This Stack
+
+**Next.js** gives you: SSR for SEO, API routes for proxying, excellent TypeScript support, and the App Router streaming primitives that pair perfectly with LLM streaming.
+
+**FastAPI** gives you: async Python (critical for non-blocking LLM calls), automatic OpenAPI docs, Pydantic validation, and the entire Python ML/AI ecosystem.
+
+Together: streaming responses work natively, Python handles the LLM complexity, React handles the UI, TypeScript catches API contract bugs before production.
+
+## The Folder Structure
+
+```
+project/
+├── frontend/               # Next.js App
+│   ├── app/
+│   │   ├── api/chat/       # Proxy routes
+│   │   └── page.tsx
+│   ├── components/
+│   │   └── ChatWidget.tsx  # Streaming chat UI
+│   └── lib/
+│       └── api.ts          # Typed API client
+│
+└── backend/                # FastAPI
+    ├── routers/
+    │   └── chat.py         # SSE streaming endpoint
+    ├── services/
+    │   ├── llm_service.py  # LLM abstraction
+    │   └── rag_service.py  # Vector retrieval
+    └── main.py
+```
+
+## Streaming: The Right Way
+
+The single most important pattern in AI UIs is streaming. Users tolerate 10 seconds of streaming output; they abandon after 3 seconds of blank screen.
+
+**Backend — FastAPI SSE:**
+
+```python
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+import anthropic
+import json
+
+client = anthropic.Anthropic()
+
+async def stream_response(query: str):
+    with client.messages.stream(
+        model="claude-sonnet-4-20250514",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": query}]
+    ) as stream:
+        for text in stream.text_stream:
+            event = json.dumps({"type": "token", "content": text})
+            yield f"data: {event}\n\n"
+        yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+@app.post("/chat/message")
+async def chat_endpoint(body: ChatRequest):
+    return StreamingResponse(
+        stream_response(body.message),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",  # Critical for Nginx
+        }
+    )
+```
+
+**Frontend — consuming SSE with fetch:**
+
+```typescript
+async function* streamChat(message: string) {
+  const res = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message }),
+  })
+
+  const reader = res.body!.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    buffer += decoder.decode(value, { stream: true })
+    const lines = buffer.split('\n')
+    buffer = lines.pop() ?? ''
+
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const data = JSON.parse(line.slice(6))
+        yield data
+      }
+    }
+  }
+}
+```
+
+## Rate Limiting with Redis
+
+Every public AI endpoint needs rate limiting. Redis makes it trivial:
+
+```python
+import redis.asyncio as redis
+from fastapi import HTTPException, Request
+
+r = redis.from_url("redis://localhost:6379")
+
+async def rate_limit(request: Request, limit: int = 10, window: int = 3600):
+    ip = request.client.host
+    key = f"rl:{ip}"
+    count = await r.incr(key)
+    if count == 1:
+        await r.expire(key, window)
+    if count > limit:
+        raise HTTPException(429, "Rate limit exceeded")
+```
+
+## TypeScript API Contract
+
+The frontend and backend contract should be typed on both ends. I keep a shared types file:
+
+```typescript
+// lib/api.ts
+export interface ChatRequest {
+  message: string
+  session_id: string
+}
+
+export interface SSEEvent {
+  type: 'token' | 'done' | 'error'
+  content?: string
+  message?: string
+}
+```
+
+And Pydantic on the backend mirrors these exactly:
+
+```python
+from pydantic import BaseModel
+
+class ChatRequest(BaseModel):
+    message: str
+    session_id: str
+```
+
+Any contract mismatch is caught immediately in development.
+
+## Conclusion
+
+This architecture has shipped to production multiple times. The key decisions:
+- **Streaming first** — never make users wait for a full response
+- **Type both ends** — Pydantic + TypeScript catch contract bugs early
+- **Rate limit from day one** — Redis counters are 5 minutes to add
+- **Keep LLM logic in Python** — don't fight the ecosystem
+
+Clone it, gut what you don't need, and ship.

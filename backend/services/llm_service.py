@@ -6,9 +6,11 @@ Redis is used for session history + caching but degrades gracefully if unavailab
 import json
 import hashlib
 import logging
+import asyncio
 from typing import AsyncGenerator
 
 import google.generativeai as genai
+from google.api_core.exceptions import ServiceUnavailable, ResourceExhausted
 import redis.asyncio as aioredis
 
 from config import get_settings
@@ -140,16 +142,25 @@ async def stream_chat_response(
         # 5. Build message contents (history + current message)
         contents = _build_gemini_contents(history, message)
 
-        # 6. Stream response
+        # 6. Stream response (retry up to 3× on transient 503)
         full_response = ""
-        response = await model.generate_content_async(
-            contents,
-            generation_config=genai.GenerationConfig(
-                max_output_tokens=1024,
-                temperature=0.7,
-            ),
-            stream=True,
-        )
+        response = None
+        for attempt in range(3):
+            try:
+                response = await model.generate_content_async(
+                    contents,
+                    generation_config=genai.GenerationConfig(
+                        max_output_tokens=1024,
+                        temperature=0.7,
+                    ),
+                    stream=True,
+                )
+                break
+            except ServiceUnavailable:
+                if attempt < 2:
+                    await asyncio.sleep(2 ** attempt)
+                else:
+                    raise
 
         async for chunk in response:
             if chunk.text:
@@ -178,9 +189,10 @@ async def stream_chat_response(
         err = str(e)
         logger.exception(f"stream_chat_response error: {err}")
 
-        if "quota" in err.lower() or "rate" in err.lower():
+        busy_signals = ("quota", "rate", "unavailable", "demand", "503", "overload")
+        if any(s in err.lower() for s in busy_signals):
             yield f"data: {json.dumps({'type': 'error', 'message': 'AI is busy — please try again in a moment.'})}\n\n"
         elif "api_key" in err.lower() or "invalid" in err.lower():
             yield f"data: {json.dumps({'type': 'error', 'message': 'AI service configuration error.'})}\n\n"
         else:
-            yield f"data: {json.dumps({'type': 'error', 'message': 'An unexpected error occurred.'})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'message': 'AI is temporarily unavailable — please try again.'})}\n\n"

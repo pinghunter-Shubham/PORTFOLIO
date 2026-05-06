@@ -8,16 +8,14 @@ from functools import lru_cache
 
 class Settings(BaseSettings):
     # API keys
-    anthropic_api_key: str = ""
-    openai_api_key: str = ""
+    gemini_api_key: str = ""
     resend_api_key: str = ""
 
     # Email
-    my_email: str = "your@email.com"
+    my_email: str = "Shubhamking201@gmail.com"
 
-    # Infrastructure
+    # Infrastructure (Redis is optional — graceful fallback if unavailable)
     redis_url: str = "redis://localhost:6379"
-    database_url: str = "postgresql://user:pass@localhost:5432/portfolio"
 
     # CORS
     allowed_origins: str = "http://localhost:3000"
@@ -25,12 +23,13 @@ class Settings(BaseSettings):
     # RAG settings
     chroma_persist_dir: str = "./chroma_db"
     knowledge_base_dir: str = "./data/knowledge_base"
-    embedding_model: str = "text-embedding-3-small"
-    llm_model: str = "claude-sonnet-4-20250514"
+    # Local HuggingFace embedding model — no API key needed
+    embedding_model: str = "all-MiniLM-L6-v2"
+    llm_model: str = "gemini-2.5-flash"
 
     # Rate limiting
-    chat_rate_limit: int = 10        # requests per IP per hour
-    contact_rate_limit: int = 3      # submissions per IP per day
+    chat_rate_limit: int = 10       # requests per IP per hour
+    contact_rate_limit: int = 3     # submissions per IP per day
 
     class Config:
         env_file = ".env"

@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
         initialize_vectorstore()
         logger.info("✅ RAG vector store initialized")
     except Exception as e:
-        logger.warning(f"⚠️  Vector store initialization failed (API keys required): {e}")
+        logger.warning(f"⚠️  RAG index initialization failed: {e}")
 
     yield
 

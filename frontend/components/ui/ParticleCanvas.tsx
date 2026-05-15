@@ -30,8 +30,13 @@ export default function ParticleCanvas() {
     renderer.setClearColor(0x000000, 0)
     mount.appendChild(renderer.domElement)
 
+    // Skip on mobile / low-power devices — Three.js is heavy
+    const isLowPower =
+      window.matchMedia('(hover: none) and (pointer: coarse)').matches ||
+      navigator.hardwareConcurrency <= 4
+
     // ── Nodes ─────────────────────────────────────────────────────
-    const NODE_COUNT = 80
+    const NODE_COUNT = isLowPower ? 40 : 80
     const LINK_DISTANCE = 28
 
     const positions = Array.from({ length: NODE_COUNT }, () => ({
@@ -65,7 +70,15 @@ export default function ParticleCanvas() {
     scene.add(lineGroup)
 
     const updateLines = () => {
+      // Free GPU memory of previous lines before recreating
+      lineGroup.children.forEach((child) => {
+        if (child instanceof THREE.Line) {
+          child.geometry.dispose()
+          ;(child.material as THREE.Material).dispose()
+        }
+      })
       lineGroup.clear()
+
       for (let i = 0; i < NODE_COUNT; i++) {
         for (let j = i + 1; j < NODE_COUNT; j++) {
           const dx = positions[i].x - positions[j].x
@@ -143,7 +156,22 @@ export default function ParticleCanvas() {
       cancelAnimationFrame(frameId)
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('resize', handleResize)
+
+      // Dispose all GPU resources
+      lineGroup.children.forEach((child) => {
+        if (child instanceof THREE.Line) {
+          child.geometry.dispose()
+          ;(child.material as THREE.Material).dispose()
+        }
+      })
+      nodeMeshes.forEach((mesh) => {
+        ;(mesh.material as THREE.Material).dispose()
+      })
+      nodeGeo.dispose()
+      nodeMat.dispose()
+      lineMat.dispose()
       renderer.dispose()
+
       if (mount.contains(renderer.domElement)) {
         mount.removeChild(renderer.domElement)
       }

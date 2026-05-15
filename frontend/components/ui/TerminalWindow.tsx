@@ -28,7 +28,7 @@ export default function TerminalWindow({
   >([])
   const [currentLine, setCurrentLine] = useState(0)
   const [currentChar, setCurrentChar] = useState(0)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const bodyRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!autoPlay) {
@@ -91,7 +91,8 @@ export default function TerminalWindow({
   }, [autoPlay, currentLine, currentChar, lines])
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = bodyRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [visibleLines])
 
   return (
@@ -130,7 +131,7 @@ export default function TerminalWindow({
       </div>
 
       {/* Terminal body */}
-      <div className="p-6 min-h-[280px] overflow-auto max-h-[420px]">
+      <div ref={bodyRef} className="p-6 min-h-[280px] overflow-auto max-h-[420px]">
         {visibleLines.map((entry, i) => (
           <div key={i} className="mb-1">
             {entry.line.type === 'blank' ? (
@@ -181,7 +182,6 @@ export default function TerminalWindow({
             </span>
           </p>
         )}
-        <div ref={bottomRef} />
       </div>
     </motion.div>
   )

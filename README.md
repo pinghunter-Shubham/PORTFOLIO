@@ -1,15 +1,17 @@
-# AI Engineer Portfolio
+# Shubham Singh — AI Engineer Portfolio
 
-A world-class portfolio website with an embedded AI clone — built with Next.js 14, FastAPI, and Claude.
+A portfolio website with an embedded AI clone that answers questions about my background, projects, and skills in real time.
+
+**Live:** [portfolio-bay-gamma-58.vercel.app](https://portfolio-bay-gamma-58.vercel.app)
 
 ## Tech Stack
 
-| Layer     | Technology                                      |
-|-----------|-------------------------------------------------|
-| Frontend  | Next.js 14 · TypeScript · Tailwind · Framer Motion · Three.js |
-| Backend   | FastAPI · Python 3.11 · LangChain · Anthropic Claude |
-| AI        | RAG pipeline · Chroma vector store · Claude claude-sonnet-4-20250514 |
-| Infra     | Redis · Docker Compose · Vercel · Render        |
+| Layer     | Technology                                                          |
+|-----------|---------------------------------------------------------------------|
+| Frontend  | Next.js 14 · TypeScript · Tailwind · Framer Motion · Three.js       |
+| Backend   | FastAPI · Python 3.11                                               |
+| AI        | Google Gemini 2.5 Flash · context-stuffing RAG (1M-token window)    |
+| Infra     | Vercel (frontend) · Render (backend) · optional Redis for sessions  |
 
 ---
 
@@ -18,7 +20,6 @@ A world-class portfolio website with an embedded AI clone — built with Next.js
 ### Prerequisites
 - Node.js 20+
 - Python 3.11+
-- Redis (or Docker)
 
 ### 1. Clone and set up environment variables
 
@@ -28,62 +29,54 @@ cp frontend/.env.local.example frontend/.env.local
 
 # Backend
 cp backend/.env.example backend/.env
-# Fill in your API keys in backend/.env
+# Add your Gemini API key to backend/.env
 ```
 
-### 2. Start with Docker Compose (recommended)
+### 2. Start the backend
 
-```bash
-docker-compose up --build
-```
-
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
-
-### 3. Start manually
-
-**Backend:**
 ```bash
 cd backend
 python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
+source .venv/bin/activate    # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-**Frontend:**
+### 3. Start the frontend
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+
+---
+
+## How the AI Chat Works
+
+Instead of vector embeddings + similarity search, the entire knowledge base (resume, project descriptions, bio — ~11k chars total) is loaded directly into Gemini 2.5 Flash's context window on every request. Gemini's 1M-token context comfortably fits everything, so there's no need for Chroma, embeddings, or model downloads.
+
+Trade-off: slightly higher input-token cost per request, but zero infrastructure to maintain and instant updates when the knowledge base changes.
+
 ---
 
 ## Customization
 
-### Fill in your information
-
 1. **Knowledge base** — edit the `.md` files in `backend/data/knowledge_base/`:
-   - `resume.md` — your experience, skills, education
+   - `resume.md` — experience, skills, education
    - `projects.md` — detailed project descriptions
-   - `about.md` — your philosophy and work style
+   - `about.md` — bio and work style
 
 2. **Portfolio data** — edit `frontend/lib/data.ts`:
-   - `projects[]` — your actual projects
-   - `skills[]` — your skill set
-   - `experiences[]` — your work history
-   - `blogPosts[]` — your blog metadata
+   - `projects[]`, `skills[]`, `experiences[]`, `blogPosts[]`
 
-3. **Branding** — update in `frontend/app/layout.tsx`:
-   - Site title, description, OG metadata
+3. **Branding** — update `frontend/app/layout.tsx` (metadata) and the layout components.
 
-4. **Contact/Social** — update links in:
-   - `frontend/components/sections/Contact.tsx`
-   - `frontend/components/layout/Footer.tsx`
-
-5. **Blog posts** — add `.mdx` files to `frontend/content/blog/`
+4. **Blog posts** — add `.mdx` files to `frontend/content/blog/`
 
 ---
 
@@ -92,36 +85,34 @@ npm run dev
 ### Frontend (`frontend/.env.local`)
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8000
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 ### Backend (`backend/.env`)
 ```env
-ANTHROPIC_API_KEY=sk-ant-...
-OPENAI_API_KEY=sk-...          # Used for embeddings (text-embedding-3-small)
-RESEND_API_KEY=re_...          # For contact form emails
+GEMINI_API_KEY=...            # Free tier: aistudio.google.com
+RESEND_API_KEY=re_...         # Optional — for the contact form
 MY_EMAIL=your@email.com
-REDIS_URL=redis://localhost:6379
+REDIS_URL=redis://localhost:6379   # Optional — rate limiting + session history
 ALLOWED_ORIGINS=http://localhost:3000
+LLM_MODEL=gemini-2.5-flash
 ```
+
+Redis is optional — the backend degrades gracefully if it's unavailable (no rate limiting, no chat history persistence).
 
 ---
 
 ## Deployment
 
 ### Frontend → Vercel
-```bash
-cd frontend
-npx vercel --prod
-```
-Set `NEXT_PUBLIC_API_URL` to your Render backend URL in Vercel dashboard.
+1. Import the repo on vercel.com
+2. Root directory: `frontend`
+3. Add env var: `NEXT_PUBLIC_API_URL` = your backend URL
 
 ### Backend → Render
-1. Push to GitHub
-2. Create a new Web Service on Render
-3. Set build command: `pip install -r requirements.txt`
-4. Set start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-5. Add all environment variables from `backend/.env.example`
+1. New Web Service → connect repo → root directory `backend`
+2. Runtime: Docker (Dockerfile is included)
+3. **Region: US (Oregon)** — Gemini's free tier is geo-restricted and blocks calls from some non-US server regions
+4. Env vars: `GEMINI_API_KEY`, `ALLOWED_ORIGINS`
 
 ---
 
@@ -129,25 +120,19 @@ Set `NEXT_PUBLIC_API_URL` to your Render backend URL in Vercel dashboard.
 
 ```
 portfolio/
-├── frontend/          # Next.js 14 App
-│   ├── app/           # App Router pages
-│   ├── components/    # React components
-│   │   ├── cursor/    # Custom cursor
-│   │   ├── layout/    # Navbar, Footer
-│   │   ├── sections/  # Page sections
-│   │   └── ui/        # Reusable UI components
-│   ├── content/blog/  # MDX blog posts
-│   └── lib/           # API client, data, utils
+├── frontend/             # Next.js 14 App Router
+│   ├── app/              # Routes
+│   ├── components/       # React components
+│   ├── content/blog/     # MDX blog posts
+│   └── lib/              # API client, data, utils
 │
-├── backend/           # FastAPI Python
-│   ├── routers/       # API route handlers
-│   ├── services/      # Business logic (LLM, RAG, email)
-│   ├── data/          # Knowledge base markdown files
-│   └── main.py        # App entry point
-│
-└── docker-compose.yml
+└── backend/              # FastAPI
+    ├── routers/          # /chat, /contact, /health
+    ├── services/         # LLM (Gemini) + RAG (context stuffing)
+    ├── data/knowledge_base/   # Markdown source for the AI clone
+    └── main.py           # App entry point
 ```
 
 ---
 
-Built with Next.js, FastAPI & Claude — Made in Hyderabad, India 🇮🇳
+Made in West Bengal, India 🇮🇳

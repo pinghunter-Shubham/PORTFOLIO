@@ -48,9 +48,12 @@ app = FastAPI(
 )
 
 # ── CORS ──────────────────────────────────────────────────────────────────────
+# Accept any URL on Vercel (project preview URLs change per deploy) plus any
+# explicit origins listed in ALLOWED_ORIGINS env var.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.origins_list,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],

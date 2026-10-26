@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { skills, type Skill } from '@/lib/data'
 
 const GROUP_COLORS: Record<Skill['group'], string> = {
-  'AI / ML':   '#00D4FF',
-  'Frontend':  '#7B61FF',
-  'Backend':   '#00D48C',
+  'AI / ML':   '#b54832',
+  'Frontend':  '#b54832',
+  'Backend':   '#61795f',
   'Tools':     '#8892A4',
 }
 
@@ -145,7 +145,7 @@ export default function SkillGraph() {
         // Label for larger nodes or hovered
         if (isHovered || node.level >= 88) {
           ctx.font = `${isHovered ? 600 : 400} ${isHovered ? 12 : 10}px 'JetBrains Mono', monospace`
-          ctx.fillStyle = isHovered ? '#F0F4FF' : col
+          ctx.fillStyle = isHovered ? '#f5f3ed' : col
           ctx.textAlign = 'center'
           ctx.fillText(node.name, node.x, node.y - r - 5)
         }

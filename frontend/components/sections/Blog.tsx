@@ -8,7 +8,7 @@ import { blogPosts } from '@/lib/data'
 
 const CATEGORY_COLORS: Record<string, string> = {
   'LLM Engineering': '#00D4FF',
-  'AI Engineering':  '#7B61FF',
+  'AI Engineering':  '#b54832',
   'Full Stack':      '#00D48C',
 }
 
@@ -16,6 +16,8 @@ const CATEGORY_COLORS: Record<string, string> = {
  * Blog — horizontal scrolling blog card row with excerpt and category tags.
  */
 export default function Blog() {
+  if (blogPosts.length === 0) return null
+
   return (
     <section id="blog" className="section-padding" style={{ background: 'var(--bg-secondary)' }}>
       <div className="section-container">

@@ -6,17 +6,19 @@ import Experience from '@/components/sections/Experience'
 import AIDemo from '@/components/sections/AIDemo'
 import Blog from '@/components/sections/Blog'
 import Contact from '@/components/sections/Contact'
+import { getAutoProjects } from '@/lib/github-projects'
 
 /**
  * Home page — single-page portfolio, all sections stacked vertically.
  */
-export default function Home() {
+export default async function Home() {
+  const autoProjects = await getAutoProjects()
   return (
     <>
       <Hero />
       <About />
       <Skills />
-      <Projects />
+      <Projects autoProjects={autoProjects} />
       <Experience />
       <AIDemo />
       <Blog />

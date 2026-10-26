@@ -7,7 +7,7 @@
 export interface Project {
   id: string
   title: string
-  category: 'ML / AI' | 'Computer Vision' | 'Python' | 'IoT / Embedded' | 'Research'
+  category: 'ML / AI' | 'Computer Vision' | 'Python' | 'IoT / Embedded' | 'Research' | 'Software'
   description: string
   tech: string[]
   hasDemo: boolean
@@ -19,13 +19,13 @@ export interface Project {
 export const projects: Project[] = [
   {
     id: 'brain-tumor',
-    title: 'Brain Tumor Detection & Classification',
+    title: 'Brain Tumor Detection and Classification',
     category: 'Computer Vision',
     description:
-      'U-Net model for tumor segmentation combined with an ImageNet-based classifier achieving 94% accuracy. Integrates patient data for risk prediction using the Kaggle LGG MRI Segmentation dataset.',
-    tech: ['Python', 'TensorFlow', 'U-Net', 'Keras', 'Pandas', 'Kaggle'],
+      'Prototype for brain MRI tumor segmentation with U-Net, tumor classification using an ImageNet-based model, and a patient risk analysis feature.',
+    tech: ['Python', 'U-Net', 'CNN', 'ImageNet'],
     hasDemo: false,
-    github: '#',
+    github: 'https://github.com/pinghunter-Shubham/Brain-Tumor-',
     demo: '#',
     featured: true,
   },
@@ -66,13 +66,13 @@ export const projects: Project[] = [
   },
   {
     id: 'smart-india-hackathon',
-    title: 'Heritage Tourism App — SIH 2024',
+    title: 'Heritage and Culture Explorer (SIH 1493)',
     category: 'Python',
     description:
-      'Smart India Hackathon project (SANSKRITI_06): Python-based app for scanning QR codes at heritage sites to display information in text, audio, and virtual formats. Boosted user engagement by 20%.',
-    tech: ['Python', 'Flask', 'QR Code', 'TTS', 'REST API'],
+      'Team project for Smart India Hackathon 1493. The proposal uses QR scans to show heritage site information in text, audio, and virtual formats, alongside state-based heritage and culture guides.',
+    tech: ['Python', 'OpenCV', 'PySimpleGUI', 'MySQL'],
     hasDemo: false,
-    github: '#',
+    github: 'https://github.com/pinghunter-Shubham/Smart-India-Hackathon-',
     demo: '#',
   },
   {
@@ -200,35 +200,8 @@ export interface BlogPost {
   excerpt: string
 }
 
-export const blogPosts: BlogPost[] = [
-  {
-    slug: 'building-production-rag-pipelines',
-    title: 'Building Production RAG Pipelines: What Nobody Tells You',
-    date: '2024-08-15',
-    readingTime: '12 min read',
-    category: 'LLM Engineering',
-    excerpt:
-      'After exploring RAG architectures in depth, I collected the lessons that don\'t make it into tutorials — chunking strategies, reranking traps, and why your eval set might be lying to you.',
-  },
-  {
-    slug: 'switched-from-openai-to-claude',
-    title: 'Why I Switched from OpenAI to Claude for My Agent Architecture',
-    date: '2024-07-22',
-    readingTime: '8 min read',
-    category: 'AI Engineering',
-    excerpt:
-      'Six months into building a multi-agent system on GPT-4, I made the switch to Claude. Here\'s what changed, what got better, what got harder, and the architectural decisions that come with the switch.',
-  },
-  {
-    slug: 'react-fastapi-ai-template',
-    title: 'React + FastAPI: The Full-Stack AI App Template I Wish Existed',
-    date: '2024-06-10',
-    readingTime: '15 min read',
-    category: 'Full Stack',
-    excerpt:
-      'A production-ready template for AI applications: streaming responses, token counting, rate limiting, auth, and a sane folder structure. Walk through every decision and why it matters at scale.',
-  },
-]
+// Blog posts stay unpublished until the owner confirms their authorship and claims.
+export const blogPosts: BlogPost[] = []
 
 // ─── Nav links ────────────────────────────────────────────────────────────────
 
@@ -238,6 +211,5 @@ export const navLinks = [
   { label: 'Projects',href: '#projects' },
   { label: 'Skills',  href: '#skills' },
   { label: 'AI Demo', href: '#ai-demo' },
-  { label: 'Blog',    href: '#blog' },
   { label: 'Contact', href: '#contact' },
 ]

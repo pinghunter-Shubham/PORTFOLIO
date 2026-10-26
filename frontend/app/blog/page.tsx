@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowLeft, Calendar, Clock } from 'lucide-react'
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { blogPosts } from '@/lib/data'
 
 export const metadata: Metadata = {
@@ -9,9 +10,9 @@ export const metadata: Metadata = {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  'LLM Engineering': '#00D4FF',
-  'AI Engineering':  '#7B61FF',
-  'Full Stack':      '#00D48C',
+  'LLM Engineering': '#b54832',
+  'AI Engineering':  '#b54832',
+  'Full Stack':      '#61795f',
 }
 
 /**
@@ -19,6 +20,8 @@ const CATEGORY_COLORS: Record<string, string> = {
  * Uses CSS-only hover (no inline JS handlers) so the page stays a Server Component.
  */
 export default function BlogPage() {
+  if (blogPosts.length === 0) notFound()
+
   return (
     <div className="min-h-screen pt-24 pb-20" style={{ background: 'var(--bg-primary)' }}>
       <div className="section-container max-w-3xl">
@@ -40,7 +43,7 @@ export default function BlogPage() {
             color: 'var(--accent-primary)',
           }}
         >
-          // 07&nbsp;&nbsp;WRITING
+          {'//'} 07&nbsp;&nbsp;WRITING
         </p>
         <h1
           className="font-display font-bold mb-4"
@@ -100,7 +103,7 @@ export default function BlogPage() {
                   </div>
 
                   <h2
-                    className="font-bold text-xl mb-2 group-hover:text-[#00D4FF] transition-colors"
+                    className="font-bold text-xl mb-2 group-hover:text-[#b54832] transition-colors"
                     style={{
                       fontFamily: 'var(--font-syne, sans-serif)',
                       color: 'var(--text-primary)',

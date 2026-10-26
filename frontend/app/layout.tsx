@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Syne, DM_Sans, JetBrains_Mono } from 'next/font/google'
 import '@/styles/globals.css'
-import CustomCursor from '@/components/cursor/CustomCursor'
+
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 
@@ -50,6 +50,7 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: 'Shubham Singh' }],
   creator: 'Shubham Singh',
+  icons: { icon: '/favicon.svg' },
   openGraph: {
     type: 'website',
     locale: 'en_US',
@@ -72,7 +73,7 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#080B0F',
+  themeColor: '#f5f3ed',
   width: 'device-width',
   initialScale: 1,
 }
@@ -85,7 +86,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable}`}
     >
       <body>
-        <CustomCursor />
         <Navbar />
         <main>{children}</main>
         <Footer />

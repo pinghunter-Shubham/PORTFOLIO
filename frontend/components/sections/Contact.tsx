@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Github, Linkedin, Twitter, Mail, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { Github, Linkedin, Mail, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { z } from 'zod'
 import SectionLabel from '@/components/ui/SectionLabel'
 import GlowButton from '@/components/ui/GlowButton'
@@ -12,7 +12,7 @@ const schema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email'),
   subject: z.enum(['Job Opportunity', 'Freelance', 'Collaboration', 'Other'], {
-    errorMap: () => ({ message: 'Please select a subject' }),
+    error: 'Please select a subject',
   }),
   message: z
     .string()
@@ -25,10 +25,9 @@ type FormData = z.infer<typeof schema>
 type Status = 'idle' | 'loading' | 'success' | 'error'
 
 const SOCIAL_LINKS = [
-  { icon: Github,   href: 'https://github.com/Shubhamking201',       label: 'GitHub' },
-  { icon: Linkedin, href: 'https://linkedin.com/in/shubham-singh',   label: 'LinkedIn' },
-  { icon: Twitter,  href: 'https://twitter.com',                      label: 'Twitter / X' },
-  { icon: Mail,     href: 'mailto:Shubhamking201@gmail.com',          label: 'Email' },
+  { icon: Github, href: 'https://github.com/pinghunter-Shubham', label: 'GitHub' },
+  { icon: Linkedin, href: 'https://www.linkedin.com/in/shubham-singh-23922b282/', label: 'LinkedIn' },
+  { icon: Mail, href: 'mailto:shubhamking201@gmail.com', label: 'Email' },
 ]
 
 /**
@@ -49,7 +48,7 @@ export default function Contact() {
     const result = schema.safeParse(form)
     if (!result.success) {
       const fieldErrors: Partial<Record<keyof FormData, string>> = {}
-      result.error.errors.forEach((e) => {
+      result.error.issues.forEach((e) => {
         const field = e.path[0] as keyof FormData
         fieldErrors[field] = e.message
       })
@@ -93,7 +92,7 @@ export default function Contact() {
   return (
     <section id="contact" className="section-padding" style={{ background: 'var(--bg-primary)' }}>
       <div className="section-container">
-        <SectionLabel number="08" label="Contact" />
+        <SectionLabel number="07" label="Contact" />
 
         <div className="grid md:grid-cols-2 gap-14 mt-10 items-start">
           {/* Left — headline + availability */}
@@ -160,7 +159,7 @@ export default function Contact() {
                   whileHover={{
                     color: 'var(--accent-primary)',
                     borderColor: 'var(--border-accent)',
-                    backgroundColor: 'rgba(0,212,255,0.06)',
+                    backgroundColor: 'var(--accent-glow)',
                   }}
                   transition={{ duration: 0.15 }}
                 >

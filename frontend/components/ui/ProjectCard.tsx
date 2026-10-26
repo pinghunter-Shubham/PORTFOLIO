@@ -1,12 +1,11 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { ExternalLink, Github, Play } from 'lucide-react'
+import { ExternalLink, Github } from 'lucide-react'
 import type { Project } from '@/lib/data'
 
 interface ProjectCardProps {
   project: Project
-  onDemoClick?: (projectId: string) => void
 }
 
 const CATEGORY_COLORS: Record<Project['category'], string> = {
@@ -14,13 +13,14 @@ const CATEGORY_COLORS: Record<Project['category'], string> = {
   'Computer Vision':'var(--accent-secondary)',
   'Python':         'var(--success)',
   'IoT / Embedded': 'var(--warning)',
-  'Research':       '#B794F4',
+  'Research':       '#b54832',
+  'Software':       'var(--text-tertiary)',
 }
 
 /**
  * ProjectCard — displays a project with tech pills, links, and hover animations.
  */
-export default function ProjectCard({ project, onDemoClick }: ProjectCardProps) {
+export default function ProjectCard({ project }: ProjectCardProps) {
   const accentColor = CATEGORY_COLORS[project.category]
 
   return (
@@ -100,47 +100,20 @@ export default function ProjectCard({ project, onDemoClick }: ProjectCardProps) 
           ))}
         </div>
 
-        {/* Action links */}
-        <div className="flex items-center gap-3 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-          {project.hasDemo && (
-            <motion.button
-              onClick={() => onDemoClick?.(project.id)}
-              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg"
-              style={{
-                color: '#080B0F',
-                background: accentColor,
-                fontFamily: 'var(--font-dm-sans, sans-serif)',
-              }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              <Play size={11} strokeWidth={2.5} />
-              Try it
-            </motion.button>
-          )}
-
-          <a
-            href={project.github}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-xs"
-            style={{ color: 'var(--text-secondary)' }}
-          >
-            <Github size={14} />
-            Code
-          </a>
-
-          <a
-            href={project.demo}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-xs ml-auto"
-            style={{ color: 'var(--text-secondary)' }}
-          >
-            <ExternalLink size={14} />
-            Live
-          </a>
-        </div>
+        {((project.github && project.github !== '#') || (project.demo && project.demo !== '#')) && (
+          <div className="flex items-center gap-4 pt-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+            {project.github && project.github !== '#' && (
+              <a href={project.github} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                <Github size={14} /> Source
+              </a>
+            )}
+            {project.demo && project.demo !== '#' && (
+              <a href={project.demo} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                <ExternalLink size={14} /> Live project
+              </a>
+            )}
+          </div>
+        )}
       </div>
     </motion.article>
   )

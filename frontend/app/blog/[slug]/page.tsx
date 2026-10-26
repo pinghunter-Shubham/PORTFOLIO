@@ -9,18 +9,19 @@ import { getBlogPost } from '@/lib/blog'
 export const dynamic = 'force-dynamic'
 
 interface Props {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const meta = blogPosts.find((p) => p.slug === params.slug)
+  const { slug } = await params
+  const meta = blogPosts.find((p) => p.slug === slug)
   if (!meta) return {}
   return { title: meta.title, description: meta.excerpt }
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
   'LLM Engineering': '#00D4FF',
-  'AI Engineering':  '#7B61FF',
+  'AI Engineering':  '#b54832',
   'Full Stack':      '#00D48C',
 }
 
@@ -28,10 +29,11 @@ const CATEGORY_COLORS: Record<string, string> = {
  * Blog post page — renders MDX with syntax highlighting on demand (force-dynamic).
  */
 export default async function BlogPostPage({ params }: Props) {
-  const meta = blogPosts.find((p) => p.slug === params.slug)
+  const { slug } = await params
+  const meta = blogPosts.find((p) => p.slug === slug)
   if (!meta) notFound()
 
-  const content = await getBlogPost(params.slug)
+  const content = await getBlogPost(slug)
   const color = CATEGORY_COLORS[meta.category] ?? '#8892A4'
 
   return (

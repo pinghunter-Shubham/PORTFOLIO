@@ -8,7 +8,7 @@ A portfolio website with an embedded AI clone that answers questions about my ba
 
 | Layer     | Technology                                                          |
 |-----------|---------------------------------------------------------------------|
-| Frontend  | Next.js 14 · TypeScript · Tailwind · Framer Motion · Three.js       |
+| Frontend  | Next.js 15 · TypeScript · Tailwind · Framer Motion · Three.js       |
 | Backend   | FastAPI · Python 3.11                                               |
 | AI        | Google Gemini 2.5 Flash · context-stuffing RAG (1M-token window)    |
 | Infra     | Vercel (frontend) · Render (backend) · optional Redis for sessions  |
@@ -80,6 +80,9 @@ Trade-off: slightly higher input-token cost per request, but zero infrastructure
 
 ---
 
+### Auto-updating project cards
+
+A public repository is included automatically when it has a non-empty GitHub description and the portfolio repository topic. Forks and archived repositories are skipped. The repository description becomes the card copy, its language and other topics become the tech labels, and its homepage URL becomes the live link. The portfolio checks GitHub hourly, so newly tagged projects appear without redeploying the site. Keep the portfolio topic off repositories you do not want featured.
 ## Environment Variables
 
 ### Frontend (`frontend/.env.local`)
@@ -120,7 +123,7 @@ Redis is optional — the backend degrades gracefully if it's unavailable (no ra
 
 ```
 portfolio/
-├── frontend/             # Next.js 14 App Router
+├── frontend/             # Next.js 15 App Router
 │   ├── app/              # Routes
 │   ├── components/       # React components
 │   ├── content/blog/     # MDX blog posts

@@ -15,7 +15,7 @@ export default function SectionLabel({ number, label, className = '' }: SectionL
         className="text-xs tracking-widest uppercase"
         style={{ fontFamily: 'var(--font-jetbrains-mono, monospace)', color: 'var(--accent-primary)' }}
       >
-        // {number}
+        {'//'} {number}
       </span>
       <span
         className="text-xs tracking-widest uppercase"

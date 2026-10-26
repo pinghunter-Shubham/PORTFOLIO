@@ -31,7 +31,7 @@ export default function ChatWidget() {
       id: 'init',
       role: 'assistant',
       content:
-        "Hi! I'm an AI trained on this engineer's resume, projects, and writing. Ask me anything about their background, skills, or work.",
+        "Hi! I can answer questions about Shubham's background, projects, and skills. What would you like to know?",
     },
   ])
   const [input, setInput] = useState('')
@@ -144,7 +144,7 @@ export default function ChatWidget() {
       >
         <div
           className="w-8 h-8 rounded-full flex items-center justify-center"
-          style={{ background: 'rgba(0,212,255,0.12)', border: '1px solid var(--border-accent)' }}
+          style={{ background: 'var(--accent-glow)', border: '1px solid var(--border-accent)' }}
         >
           <Bot size={16} style={{ color: 'var(--accent-primary)' }} />
         </div>
@@ -153,7 +153,7 @@ export default function ChatWidget() {
             className="text-sm font-semibold"
             style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-syne, sans-serif)' }}
           >
-            AI Clone
+            Portfolio assistant
           </p>
           <p
             className="text-xs"
@@ -182,7 +182,7 @@ export default function ChatWidget() {
                 <div
                   className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mb-1"
                   style={{
-                    background: 'rgba(0,212,255,0.1)',
+                    background: 'var(--accent-glow)',
                     border: '1px solid var(--border-accent)',
                   }}
                 >

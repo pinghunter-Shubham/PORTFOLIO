@@ -109,10 +109,6 @@ export default function HeroScene() {
     resize()
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const isLowPower =
-      window.matchMedia('(hover: none) and (pointer: coarse)').matches ||
-      (navigator.hardwareConcurrency > 0 && navigator.hardwareConcurrency <= 4)
-
     let frameId = 0
     let previousFrame = 0
     const animate = (time: number) => {
@@ -120,15 +116,19 @@ export default function HeroScene() {
       if (time - previousFrame < 1000 / 30) return
       previousFrame = time
 
-      sculpture.rotation.y += 0.0022
+      sculpture.rotation.y += 0.008
       sculpture.rotation.x = Math.sin(time * 0.00018) * 0.06
       sculpture.position.y = Math.sin(time * 0.00035) * 0.035
+      core.rotation.y -= 0.004
+      network.rotation.y -= 0.013
+      orbitA.rotation.z += 0.003
+      orbitB.rotation.y += 0.002
       renderer.render(scene, camera)
     }
 
     const syncMotionPreference = () => {
       window.cancelAnimationFrame(frameId)
-      if (prefersReducedMotion.matches || isLowPower) {
+      if (prefersReducedMotion.matches) {
         renderer.render(scene, camera)
       } else {
         frameId = window.requestAnimationFrame(animate)

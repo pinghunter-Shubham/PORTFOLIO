@@ -10,6 +10,7 @@ interface GitHubRepository {
   topics?: string[]
   fork: boolean
   archived: boolean
+  size: number
 }
 
 function categoryFor(topics: string[], language: string | null): Project['category'] {
@@ -30,8 +31,8 @@ function titleFromRepository(name: string): string {
 }
 
 /**
- * Add public GitHub repositories only when they are explicitly tagged portfolio.
- * The one-hour cache lets new tagged repositories appear without a site redeploy.
+ * Show substantive public repositories automatically. The one-hour cache lets
+ * newly created or updated repositories appear without a site redeploy.
  */
 export async function getAutoProjects(): Promise<Project[]> {
   try {
@@ -51,19 +52,20 @@ export async function getAutoProjects(): Promise<Project[]> {
       .filter((repo) =>
         !repo.fork &&
         !repo.archived &&
-        repo.topics?.includes('portfolio') &&
-        Boolean(repo.description?.trim()),
+        repo.size > 0 &&
+        !['PORTFOLIO', 'pinghunter-Shubham'].includes(repo.name),
       )
       .map((repo) => {
-        const topics = (repo.topics ?? []).filter((topic) => topic !== 'portfolio')
+        const topics = repo.topics ?? []
         const homepage = repo.homepage ?? ''
         const demo = /^https?:\/\//.test(homepage) ? homepage : '#'
+        const title = titleFromRepository(repo.name)
 
         return {
           id: repo.full_name,
-          title: titleFromRepository(repo.name),
+          title,
           category: categoryFor(topics, repo.language),
-          description: repo.description!.trim(),
+          description: repo.description?.trim() || `Explore the source code and implementation for ${title} in this repository.`,
           tech: [...new Set([repo.language, ...topics].filter((value): value is string => Boolean(value)))].slice(0, 5),
           hasDemo: demo !== '#',
           github: repo.html_url,

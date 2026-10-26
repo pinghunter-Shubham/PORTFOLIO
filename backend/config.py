@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     knowledge_base_dir: str = "./data/knowledge_base"
     # Local HuggingFace embedding model — no API key needed
     embedding_model: str = "all-MiniLM-L6-v2"
-    llm_model: str = "gemini-2.5-flash"
+    llm_model: str = "gemini-3.8-flash"
 
     # Rate limiting
     chat_rate_limit: int = 10       # requests per IP per hour

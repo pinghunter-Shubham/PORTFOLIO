@@ -288,7 +288,7 @@ export default function ChatWidget() {
               key={q}
               onClick={() => sendMessage(q)}
               disabled={isLoading}
-              className="text-xs px-3 py-1.5 rounded-full transition-colors"
+              className="text-xs px-3 py-1.5 rounded-md transition-colors"
               style={{
                 background: 'var(--bg-tertiary)',
                 color: 'var(--text-secondary)',

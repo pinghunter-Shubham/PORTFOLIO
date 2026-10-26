@@ -1,16 +1,15 @@
 """
-LLM service — Gemini 1.5 Flash for streaming responses with RAG context injection.
+LLM service — Gemini Flash for streaming responses with RAG context injection.
 Redis is used for session history + caching but degrades gracefully if unavailable.
 """
 
 import json
 import hashlib
 import logging
-import asyncio
 from typing import AsyncGenerator
 
-import google.generativeai as genai
-from google.api_core.exceptions import ServiceUnavailable, ResourceExhausted
+from google import genai
+from google.genai import types
 import redis.asyncio as aioredis
 
 from config import get_settings
@@ -19,8 +18,8 @@ from services.rag_service import retrieve_context
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-# Configure Gemini once on import
-genai.configure(api_key=settings.gemini_api_key)
+# Reuse the official Google Gen AI client across requests.
+gemini_client = genai.Client(api_key=settings.gemini_api_key)
 
 _redis_client: aioredis.Redis | None = None
 
@@ -133,36 +132,22 @@ async def stream_chat_response(
             except Exception:
                 pass
 
-        # 4. Build Gemini model with system instruction
-        model = genai.GenerativeModel(
-            model_name=settings.llm_model,
-            system_instruction=SYSTEM_PROMPT.format(context=context_text),
-        )
-
-        # 5. Build message contents (history + current message)
+        # 4. Build message contents (history + current message)
         contents = _build_gemini_contents(history, message)
 
-        # 6. Stream response (retry up to 3× on transient 503)
+        # 5. Stream response with the current Google Gen AI SDK.
         full_response = ""
-        response = None
-        for attempt in range(3):
-            try:
-                response = await model.generate_content_async(
-                    contents,
-                    generation_config=genai.GenerationConfig(
-                        max_output_tokens=1024,
-                        temperature=0.7,
-                    ),
-                    stream=True,
-                )
-                break
-            except ServiceUnavailable:
-                if attempt < 2:
-                    await asyncio.sleep(2 ** attempt)
-                else:
-                    raise
+        response_stream = await gemini_client.aio.models.generate_content_stream(
+            model=settings.llm_model,
+            contents=contents,
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT.format(context=context_text),
+                max_output_tokens=1024,
+                temperature=0.7,
+            ),
+        )
 
-        async for chunk in response:
+        async for chunk in response_stream:
             if chunk.text:
                 full_response += chunk.text
                 yield f"data: {json.dumps({'type': 'token', 'content': chunk.text})}\n\n"

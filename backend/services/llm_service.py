@@ -9,6 +9,7 @@ import logging
 from typing import AsyncGenerator
 
 from google import genai
+from google.genai import errors as genai_errors
 from google.genai import types
 import redis.asyncio as aioredis
 
@@ -40,6 +41,7 @@ CONTEXT:
 """
 
 CACHE_TTL = 3600  # 1 hour
+FALLBACK_MODEL = "gemini-3.5-flash-lite"
 
 
 async def get_redis() -> aioredis.Redis | None:
@@ -135,22 +137,42 @@ async def stream_chat_response(
         # 4. Build message contents (history + current message)
         contents = _build_gemini_contents(history, message)
 
-        # 5. Stream response with the current Google Gen AI SDK.
+        # 5. Stream from Gemini 3.8, falling back to free Flash-Lite on a
+        # transient 503 before any response text has been sent.
         full_response = ""
-        response_stream = await gemini_client.aio.models.generate_content_stream(
-            model=settings.llm_model,
-            contents=contents,
-            config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT.format(context=context_text),
-                max_output_tokens=1024,
-                temperature=0.7,
-            ),
-        )
+        models = [settings.llm_model]
+        if settings.llm_model != FALLBACK_MODEL:
+            models.append(FALLBACK_MODEL)
 
-        async for chunk in response_stream:
-            if chunk.text:
-                full_response += chunk.text
-                yield f"data: {json.dumps({'type': 'token', 'content': chunk.text})}\n\n"
+        for model_name in models:
+            try:
+                response_stream = await gemini_client.aio.models.generate_content_stream(
+                    model=model_name,
+                    contents=contents,
+                    config=types.GenerateContentConfig(
+                        system_instruction=SYSTEM_PROMPT.format(context=context_text),
+                        max_output_tokens=1024,
+                        temperature=0.7,
+                    ),
+                )
+
+                async for chunk in response_stream:
+                    if chunk.text:
+                        full_response += chunk.text
+                        yield f"data: {json.dumps({'type': 'token', 'content': chunk.text})}\n\n"
+                break
+            except genai_errors.ServerError as error:
+                if (
+                    model_name != settings.llm_model
+                    or getattr(error, "code", None) != 503
+                    or full_response
+                ):
+                    raise
+                logger.warning(
+                    "Gemini model %s returned 503; retrying with %s",
+                    model_name,
+                    FALLBACK_MODEL,
+                )
 
         # 7. Save session history
         updated = history + [

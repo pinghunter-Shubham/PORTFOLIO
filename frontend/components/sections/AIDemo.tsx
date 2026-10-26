@@ -2,7 +2,7 @@ import SectionLabel from '@/components/ui/SectionLabel'
 import ChatWidget from '@/components/ui/ChatWidget'
 
 const details = [
-  { label: 'Model', value: 'Gemini 3.8 Flash · free tier' },
+  { label: 'Model', value: 'Gemini 3.8 Flash · 3.5 Flash-Lite fallback' },
   { label: 'Knowledge', value: 'Portfolio background, projects, and skills' },
   { label: 'Responses', value: 'Streamed from the portfolio API' },
 ]
